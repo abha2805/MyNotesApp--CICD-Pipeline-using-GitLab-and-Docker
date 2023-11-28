@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block css %}
+<style>
+    #viewnote {
+        background-image: url("{% static 'images/viewnotebg.jpg' %}");
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-position: center;
+        min-height: 100vh;
+    }
+</style>
+{% endblock css %}
+
+{% block contents %}
+<div id="viewnote" class="container-fluid d-flex justify-content-center align-items-center">
+    <div class="container py-5 bg-secondary text-bg-secondary bg-opacity-75 shadow rounded mb-5">
+       <!-- <div class="row justify-content-center py-5">
+            <div class="col-md-6">
+                {% if messages %}
+                <div class="messages">
+                    {% for message in messages %}
+                    <div {% if message.tags %} class="{{ message.tags }}" {% endif %}>{{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div> -->
+        {% if request.user.is_authenticated and notes %}
+        <div class="text-center">
+            <h3 class="mb-4">My Notes</h3>
+        </div>
+        <div class="row justify-content-center">
+            {% for note in notes %}
+            <div class="col-md-8">
+                <div class="mb-4">
+                    <div class="">
+                        <h3>Title</h3>
+                        <p>{{ note.title }}</p>
+                        <h3>Description</h3>
+                        <p>{{ note.description }}</p>
+                        <h3>Time</h3>
+                        <p>{{ note.notetime }}</p>
+                        <p> <strong>Author : </strong> {{ note.username }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center">
+            <h4>No notes found!</h4>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        // Function to adjust container-fluid height based on viewport height
+        function adjustContainerHeight() {
+            const navbarHeight = $('.navbar').outerHeight();
+            const viewportHeight = $(window).height();
+            const containerHeight = viewportHeight - navbarHeight;
+            $('.container-fluid').css('max-height', containerHeight + 'px');
+        }
+
+        // Initial adjustment on page load
+        adjustContainerHeight();
+
+        // Adjust on window resize
+        $(window).resize(function () {
+            adjustContainerHeight();
+        });
+    });
+</script>
+
+{% endblock contents %}

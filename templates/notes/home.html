@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+
+
+{% block css %}
+<link rel="stylesheet" href="//cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css">
+<script src="https://code.jquery.com/jquery-3.6.1.js" integrity="sha256-3zlB5s2uwoUzrXK3BT7AX3FyvojsraNFxCc2vC/7pNI="
+    crossorigin="anonymous">
+    </script>
+<script src="//cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
+{% endblock css %}
+
+
+{% block contents %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div {% if message.tags %} class="{{ message.tags }}" {% endif %}>{{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+<div class="my-5 py-5 pb-5" style="min-height: 45rem;">
+
+    <div class="container py-5 pb-5 shadow rounded">
+        <h2 class="text-center">MyNote</h2>
+        <form method="POST">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-success">&#x2714;</button>
+            <button type="reset" class="btn btn-secondary">&#x2613;</button>
+        </form>
+    </div>
+
+
+    <div class="container my-5 pb-5">
+        {% if request.user.is_authenticated and notes %}
+        <h3 class="text-center">My Notes</h3>
+        <table class="table" id="notestable">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Note Time</th>
+                    <th>Description</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for note in notes %}
+                <tr>
+                    <td class="text-break"><a class="text-decoration-none color-dark"
+                            href="{% url 'notes:view_note' note.id %}">{{ note.title|truncatechars:10 }}</a></td>
+                    <td>{{ note.notetime|date:"d-m-Y" }}</td>
+                    <td class="text-break">{{ note.description | truncatewords:10 }}</td>
+                    <td>
+                        <span>
+                            <button class="btn btn-primary btn-sm editNote" data-bs-toggle="modal"
+                                data-bs-target="#editModal" data-note-id="{{note.id}}">&#9999;</button>
+                            <a href="{% url 'notes:delete_note' note.id %}" class="btn btn-danger btn-sm">&#x2613;</a>
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">Edit Note</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form action="" method="POST" id="editForm">
+                            {% csrf_token %}
+                            <div class="form-floating mb-3">
+                                <input class="form-control" placeholder="Reading book" id="titleEdit"
+                                    name="title"></input>
+                                <label for="titleEdit">Note Title</label>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <textarea class="form-control" placeholder="I'll read twelfth fail book" id="descEdit"
+                                    name="description"></textarea>
+                                <label for="descEdit">Note Description</label>
+                            </div>
+                            <div class="modal-footer d-block">
+                                <button type="submit" class="btn btn-primary">Save</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% else %}
+        <h4 class="text-center my-4">No notes found!!</h4>
+
+        {% endif %}
+    </div>
+</div>
+
+{% endblock contents %}
+
+
+
+{% block js %}
+<script>
+    $(document).ready(function () {
+        $("#notestable").DataTable();
+    });
+
+    var editModal = document.getElementById('editModal');
+    editModal.addEventListener('show.bs.modal', function (event) {
+        var button = event.relatedTarget;
+        var noteId = button.getAttribute('data-note-id');
+        var form = document.getElementById('editForm');
+        form.action = '/editnote/' + noteId + '/'; // Replace with the correct URL for updating notes
+        form.method = "POST";
+
+        // Fetch data using POST method
+        fetch('/api/notes/' + noteId + '/', {
+            method: 'POST', // Use POST method
+            headers: {
+                'Content-Type': 'application/json', // Set the content type
+                'X-CSRFToken': getCookie('csrftoken') // Include CSRF token
+            },
+            body: JSON.stringify({}), // An empty request body for the GET request
+        })
+            .then(function (response) {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(function (data) {
+                var titleInput = document.getElementById('titleEdit');
+                var descInput = document.getElementById('descEdit');
+                titleInput.value = data.title;
+                descInput.value = data.description;
+            })
+            .catch(function (error) {
+                console.error('Fetch error:', error);
+            });
+
+        // Add a click event handler for the "Save" button
+        var saveButton = document.querySelector('#editModal button[type="submit"]');
+        saveButton.addEventListener('click', function (e) {
+            e.preventDefault(); // Prevent the default form submission
+
+            // Use Fetch API to submit the form data
+            fetch(form.action, {
+                method: 'POST', // Use POST method
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded', // Set the content type
+                    'X-CSRFToken': getCookie('csrftoken') // Include CSRF token
+                },
+                body: new URLSearchParams(new FormData(form)), // Serialize form data
+            })
+                .then(function (response) {
+                    if (response.ok) {
+                        // Handle success, e.g., close the modal and refresh the page
+                        $('#editModal').modal('hide'); // Close the modal
+                        return response.json();
+                    } else {
+                        $('#editModal').modal('hide'); // Close the modal
+                        throw new Error('Form submission failed');
+                    }
+                })
+                .then(function (data) {
+                    // Redirect using the URL from the JSON response
+                    window.location.href = data.redirect_url;
+                })
+                .catch(function (error) {
+                    $('#editModal').modal('hide'); // Close the modal
+                    console.error('Form submission error:', error);
+                });
+        });
+    });
+
+    // Function to get the CSRF token from cookies
+    function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            var cookies = document.cookie.split(';');
+            for (var i = 0; i < cookies.length; i++) {
+                var cookie = cookies[i].trim();
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+{% endblock js %}

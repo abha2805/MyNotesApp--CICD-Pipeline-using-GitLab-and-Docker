@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Signup to MyNote
+{% endblock title %}
+
+{% block contents %}
+<div class="container my-5 py-5 pb-5" style="min-height: 45rem;">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                <div {% if message.tags %} class="{{ message.tags }}" {% endif %}>{{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-6 p-5 shadow rounded my-3">
+            <h3 class="text-center my-2">Signup to MyNote</h3>
+            <p>Already have an account? <a href="{% url 'accounts:login' %}">Login Here</a></p>
+            <form method="POST">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="btn btn-primary">Sign Up</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
