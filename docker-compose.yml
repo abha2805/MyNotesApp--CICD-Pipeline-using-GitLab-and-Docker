@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    volumes:
+      - mysql-data:/var/lib/mysql
+    environment:
+      MYSQL_DATABASE: notesdb
+      MYSQL_USER: notes
+      MYSQL_PASSWORD: notes  
+      MYSQL_ROOT_PASSWORD: root
+    restart: always
+
+  web:
+    depends_on:
+      - db
+    build: .
+    ports:
+      - "8080:8080"
+    restart: always
+
+volumes:
+  mysql-data:
+
